@@ -159,3 +159,7 @@ The page can only ask for one thing: "download the post with this shortcode, und
 | `icons/` | Extension icons. |
 | `native/insta_tools_host.py` | The helper. |
 | `native/install.sh`, `native/uninstall.sh` | Register and unregister the helper. |
+
+## Licence
+
+MIT. See `LICENSE`.

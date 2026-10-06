@@ -16,7 +16,7 @@ Last updated: 3 October 2026.
   - History: a floating panel that logs reel links per source (Home, Reels, Saved, Likes, Profiles), grouped by day.
   - Download: a button in the top right of post images, gallery images, videos and reels.
 - A native messaging helper (`native/insta_tools_host.py`) runs yt-dlp so videos are saved at full quality. Without it, videos fall back to the page's own MP4 (about 720p).
-- Git repo on GitHub at https://github.com/missingfoot/insta-tools (public). No licence file yet.
+- Git repo on GitHub at https://github.com/missingfoot/insta-tools (public), MIT licence.
 
 Environment it was built for: Google Chrome 153 on Linux x86 (CachyOS). The helper install script covers Linux and macOS.
 
@@ -225,7 +225,7 @@ The test scripts themselves were throwaway and are not in the repo. Adding a `te
 7. Done: History is in `chrome.storage.local`, with Export and Import.
 8. Windows helper install (registry entry plus a `.bat` wrapper). Note that `--cookies-from-browser chrome` is unreliable on Windows.
 9. Flatpak and Snap Chrome use different profile paths and are not covered by `install.sh`.
-10. Repo housekeeping: a licence file, a `tests/` folder, and a decision on whether to keep the old userscripts in a `legacy/` folder.
+10. Repo housekeeping: a `tests/` folder, and a decision on whether to keep the old userscripts in a `legacy/` folder.
 
 ## Gotchas
 
