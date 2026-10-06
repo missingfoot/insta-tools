@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Insta Tools",
+  "version": "1.0.0",
+  "description": "Logs the reels you see on Instagram into copyable lists, and adds download buttons to post images, videos and reels.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1aoh/N0ZTsXZ9fdzpOwT+tgGXq3IJjRVoQIX2HBARyeikbAEsUdbO1nm1o43ZzmwqJ8L2sKcGYT4yAJgSDQostd3niWCQjNNEpQ+PZvSlNW2tJr9o6KSSudL5mpAqSi2MHmvbZqFkhizOuCme1tEP/F4N/NAJB5qKPv71wf0AzxfBDU5K44Gm1K0aJp+BBgSpCNmwnYqFXLSIe8BsvCblWsBhzv0lOTvXEQaimYuT+XsfFAGBub+t7W/WF7Xib3l9vemO0koy6SbgdjLOo0NDOoyv5fZwk7LK3M+D0QKskgq/jyIYAn2J444h05p3LkuAj+HgrJdmUKKucc3yek7HQIDAQAB",
+  "minimum_chrome_version": "111",
+  "permissions": ["nativeMessaging", "storage", "unlimitedStorage"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "Insta Tools",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+  },
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "content_scripts": [
+    {
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["content/bridge.js", "content/history.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["content/download.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    }
+  ]
+}

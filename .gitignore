@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.crx
+*.pem
+*.zip
+node_modules/
+.DS_Store

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Insta Tools</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <h1>Insta Tools</h1>
+  <p class="lead">History and download buttons run on instagram.com. This panel shows the video helper.</p>
+  <div id="status" class="status">Checking the helper...</div>
+  <dl id="details" hidden>
+    <dt>yt-dlp</dt><dd id="ytdlp"></dd>
+    <dt>ffmpeg</dt><dd id="ffmpeg"></dd>
+    <dt>Saves to</dt><dd id="folder"></dd>
+    <dt>Login from</dt><dd id="cookies"></dd>
+    <dt>Settings</dt><dd id="config"></dd>
+  </dl>
+  <p id="hint" class="hint" hidden></p>
+  <button id="retry" type="button">Check again</button>
+  <script src="popup.js"></script>
+</body>
+</html>
