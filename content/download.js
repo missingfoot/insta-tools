@@ -218,6 +218,12 @@
     });
   }
 
+  // Amber and red results are listed in the toolbar popup, so the reason can
+  // be read after the tooltip is gone. Only the path is sent, never the query.
+  function reportProblem(state, note, frame) {
+    askHelper({ action: 'report', state, note, code: shortcodeOf(frame) || '', page: location.pathname });
+  }
+
   // ---------- Downloading ----------
 
   async function saveFromPage(media, frame) {
@@ -304,12 +310,16 @@
         const { state, note } = await download(media, frame);
         setState(btn, state);
         btn.dataset.note = note;
-        if (state === 'fallback') hold = 4000;
+        if (state === 'fallback') {
+          hold = 4000;
+          reportProblem(state, note, frame);
+        }
       } catch (err) {
         console.error('[Insta Tools]', err);
         setState(btn, 'error');
         btn.dataset.note = `Download failed: ${err.message}`;
         hold = 4000;
+        reportProblem('error', btn.dataset.note, frame);
       }
       setTimeout(() => setState(btn, 'idle'), hold);
     });

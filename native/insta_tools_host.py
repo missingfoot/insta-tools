@@ -8,6 +8,7 @@ prefixed with its length as a 4 byte little-endian integer.
 Requests:
   {"action": "ping"}
   {"action": "download", "code": "<post shortcode>", "name": "<file name, no extension>"}
+  {"action": "log"}  the end of this program's log, for the toolbar popup
 
 The extension only ever sends a shortcode and a plain file name. This program
 builds the Instagram address and the output path itself and never runs a
@@ -44,6 +45,9 @@ CONFIG_PATH = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
 # What each download attempt did, since Chrome shows the helper's stderr nowhere.
 LOG_PATH = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local" / "state") / "insta-tools" / "helper.log"
 LOG_LIMIT = 256 * 1024
+# How much of the log the popup gets. Each attempt logs yt-dlp's verbose
+# output, so this is the last few downloads.
+LOG_TAIL = 40 * 1024
 # Chrome can start the helper with a shorter PATH than a terminal has.
 EXTRA_PATH = ["~/.local/bin", "~/bin", "/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin"]
 CODE_RE = re.compile(r"^[A-Za-z0-9_-]{5,20}$")
@@ -119,6 +123,24 @@ def last_lines(text, limit=400):
     return " ".join(errors[-2:])[-limit:]
 
 
+def read_log():
+    try:
+        with LOG_PATH.open("rb") as handle:
+            handle.seek(0, os.SEEK_END)
+            size = handle.tell()
+            handle.seek(max(0, size - LOG_TAIL))
+            data = handle.read().decode("utf-8", errors="replace")
+    except FileNotFoundError:
+        return {"ok": True, "path": str(LOG_PATH), "text": ""}
+    except OSError as error:
+        return {"ok": False, "error": f"Could not read {LOG_PATH}: {error}"}
+    if size > LOG_TAIL:
+        # Start at the first whole entry rather than partway through one.
+        entry = re.search(r"^\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d pid \d+\] ", data, re.MULTILINE)
+        data = data[entry.start():] if entry else data.partition("\n")[2]
+    return {"ok": True, "path": str(LOG_PATH), "text": data, "truncated": size > LOG_TAIL}
+
+
 def ping(config):
     yt_dlp = find_program("yt-dlp", config["yt_dlp"])
     version = None
@@ -135,6 +157,7 @@ def ping(config):
         "download_dir": str(Path(config["download_dir"]).expanduser()),
         "cookies_from_browser": config["cookies_from_browser"],
         "config_path": str(CONFIG_PATH),
+        "log_path": str(LOG_PATH),
         "config_error": config.get("_config_error"),
     }
 
@@ -230,6 +253,8 @@ def main():
             send_message(ping(config))
         elif action == "download":
             send_message(download(config, message.get("code"), message.get("name")))
+        elif action == "log":
+            send_message(read_log())
         else:
             send_message({"ok": False, "error": "Unknown action"})
     except Exception as error:  # the reply is the only place an error can be seen

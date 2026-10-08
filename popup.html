@@ -18,6 +18,21 @@
   </dl>
   <p id="hint" class="hint" hidden></p>
   <button id="retry" type="button">Check again</button>
+
+  <h2>Recent problems</h2>
+  <p class="hint">Downloads that went amber or red in this browser, newest first.</p>
+  <p id="problems-empty" class="empty">None recorded.</p>
+  <ol id="problems" class="problems" hidden></ol>
+  <div class="actions">
+    <button id="copy" type="button">Copy report</button>
+    <button id="clear" type="button">Clear</button>
+    <span id="copied" class="muted" aria-live="polite"></span>
+  </div>
+  <details id="logbox">
+    <summary>Helper log</summary>
+    <p id="logpath" class="hint"></p>
+    <pre id="log"></pre>
+  </details>
   <script src="popup.js"></script>
 </body>
 </html>

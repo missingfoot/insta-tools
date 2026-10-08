@@ -13,6 +13,19 @@ dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 0 0 
 dt { color: var(--muted); }
 dd { margin: 0; overflow-wrap: anywhere; }
 code { font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-button { cursor: pointer; border: 1px solid var(--line); background: none; color: inherit; border-radius: 6px; padding: 5px 10px; font: inherit; }
+button { cursor: pointer; border: 1px solid var(--line); background: none; color: inherit; border-radius: 6px; padding: 5px 10px; font: inherit; white-space: nowrap; }
 button:hover { border-color: var(--muted); }
+h2 { margin: 16px 0 2px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; }
+.muted, .empty { color: var(--muted); }
+.empty { margin: 0 0 10px; }
+.problems { list-style: none; margin: 0 0 10px; padding: 0; max-height: 220px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; }
+.problems li { padding: 6px 8px; border-left: 4px solid var(--warn); }
+.problems li + li { border-top: 1px solid var(--line); }
+.problems li.error { border-left-color: var(--bad); }
+.problems .meta { color: var(--muted); font-size: 12px; }
+.problems .note { overflow-wrap: anywhere; }
+.actions { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+summary { cursor: pointer; color: var(--muted); }
+pre { margin: 0; max-height: 260px; overflow: auto; padding: 8px; border: 1px solid var(--line); border-radius: 6px;
+  font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 [hidden] { display: none; }

@@ -162,6 +162,8 @@
   // Another Instagram tab wrote to the history. Take its copy so the tabs stay in step.
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local' || !ready) return;
+    // Other parts of the extension (the download problem list) share this storage.
+    if (!Object.keys(changes).some((key) => key === SETTINGS_KEY || key.startsWith(STORE_PREFIX))) return;
     const writer = changes[WRITER_KEY] && changes[WRITER_KEY].newValue;
     if (writer && writer.tab === tabToken) return;
     for (const [key, { newValue }] of Object.entries(changes)) {

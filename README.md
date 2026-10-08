@@ -142,7 +142,8 @@ The page can only ask for one thing: "download the post with this shortcode, und
 
 - Popup says "Helper not connected": run `native/install.sh` again and check the extension ID on `chrome://extensions` matches the one the script printed. If it differs, pass it in: `./native/install.sh <id>`.
 - Popup says yt-dlp or ffmpeg was not found: Chrome can start the helper with a shorter PATH than your terminal. Put the full paths in the settings file.
-- Video buttons go amber: hover the button to read yt-dlp's error. "Login required" means the login retry did not work, so check `cookies_from_browser` names the browser you are logged in with.
+- Video buttons go amber: hover the button to read yt-dlp's error. "Login required" means the login retry did not work, so check `cookies_from_browser` names the browser you are logged in with. For another Chromium browser use `chromium:<path to its profile folder>`.
+- To look back at failures, open the toolbar popup. "Recent problems" lists the last 50 amber or red downloads in that browser, "Helper log" shows what yt-dlp printed (the full log is in `~/.local/state/insta-tools/helper.log`), and "Copy report" copies both with the helper's status, ready to paste into a bug report.
 - No buttons or no History panel: check the extension is enabled, reload the tab, and make sure the old Tampermonkey scripts are disabled.
 - After reloading the extension on `chrome://extensions`, refresh open Instagram tabs.
 

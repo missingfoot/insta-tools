@@ -29,8 +29,8 @@ insta-tools/
   content/history.js           History panel            (extension world)
   content/download.js          Download buttons         (page world)
   content/bridge.js            page <-> extension relay (extension world)
-  popup.html / popup.js / popup.css   toolbar popup, shows helper status
-  icons/                       icon16/48/128.png (original artwork, generated with PIL)
+  popup.html / popup.js / popup.css   toolbar popup: helper status, recent problems, helper log
+  icons/                       icon.svg (source) and icon16/32/48/128.png; 128 is rendered from the SVG with rsvg-convert
   native/insta_tools_host.py   native messaging host, runs yt-dlp
   native/install.sh            registers the host with Chromium browsers
   native/uninstall.sh          removes the registration
@@ -79,7 +79,9 @@ Message flow for a video download:
 
 Security model: Instagram's own scripts could post the same window message, so nothing from the page is trusted. The page can only ever supply a shortcode and a plain file name. The host never accepts a URL or a path, and `allowed_origins` in the host manifest limits who can start it to this extension's ID.
 
-Helper actions: `ping` (returns yt-dlp path and version, ffmpeg path, download folder, cookie setting, config path) and `download`.
+Helper actions: `ping` (returns yt-dlp path and version, ffmpeg path, download folder, cookie setting, config path, log path), `download`, and `log` (the last 40 KB of `helper.log`, starting at a whole entry). The background worker passes `log` on only when the sender is the popup page, because the log holds file paths and CDN addresses.
+
+Problem list: when a download ends amber or red, `download.js` posts `{action: "report", state, note, code, page}` through the bridge. The background worker stores it (only from an instagram.com tab, fields truncated, last 50) in `chrome.storage.local` under `insta-tools.problems`. The popup lists them and its Copy report button copies the helper status, the problems and the helper log as one text block. Failures that never reach the extension (a dead bridge after a reload) cannot be recorded. `history.js` ignores storage changes that are not its own keys.
 
 yt-dlp arguments used:
 
@@ -239,7 +241,7 @@ The test scripts themselves were throwaway and are not in the repo. Adding a `te
 - `--cookies-from-browser chrome` reads Google Chrome's login only. For another Chromium browser, set `cookies_from_browser` to `chromium:<path to its profile folder>`. Helium, for example, reads native host manifests from the Chromium folders, so `install.sh` covers it, but keeps its profile elsewhere.
 - Browsers pass library settings on to native hosts. Vivaldi's launch script sets `LD_PRELOAD` to its own cut-down `libffmpeg.so`. Preloaded into the system ffmpeg it crashes the merge (exit 139), and yt-dlp leaves separate `.fdash-...v.mp4` and `.m4a` files. Helium sets `LD_LIBRARY_PATH` to its install folder, putting its bundled `libvulkan.so.1` first. The helper strips both variables for child processes.
 - A global yt-dlp config (`~/.config/yt-dlp/config`) can add options such as `--cookies`. The helper passes `--ignore-config` so the first attempt stays logged out.
-- The helper logs every attempt (exit code, stdout, stderr) to `~/.local/state/insta-tools/helper.log`. Read it first when a download falls back.
+- The helper logs every attempt (exit code, stdout, verbose stderr) to `~/.local/state/insta-tools/helper.log`. Read it first when a download falls back. The user can also paste the popup's Copy report, which includes the extension's own problem list.
 - Tampermonkey in Chrome needs "Allow User Scripts" or Developer mode. Only relevant if going back to the userscripts.
 
 ## Version history
@@ -262,7 +264,7 @@ Instagram Image Download (userscript):
 Insta Tools (extension):
 
 - 1.0.0: both tools merged, bridge and service worker, native helper running yt-dlp, popup with helper status.
-- Unreleased: Profiles tab, Settings tab (copy prefix, Export, Import), plain tab labels, History in `chrome.storage.local` running in the isolated world.
+- Unreleased: popup problem list, helper log view and Copy report; helper strips browser library variables and logs every attempt. Earlier: Profiles tab, Settings tab (copy prefix, Export, Import), plain tab labels, History in `chrome.storage.local` running in the isolated world.
 
 ## Conventions
 
