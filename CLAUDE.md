@@ -84,7 +84,7 @@ Helper actions: `ping` (returns yt-dlp path and version, ffmpeg path, download f
 yt-dlp arguments used:
 
 ```
---no-playlist --no-progress --no-warnings --force-overwrites
+--ignore-config --no-playlist --no-progress --force-overwrites
 --format "bv*+ba/b" --merge-output-format mp4
 --paths <download_dir> --output "<name>.%(ext)s"
 --no-simulate --print "after_move:%(filepath)s\t%(width)sx%(height)s"
@@ -236,6 +236,10 @@ The test scripts themselves were throwaway and are not in the repo. Adding a `te
 - Chrome can start the helper with a shorter PATH than a terminal. The host adds common folders, and the config file takes full paths.
 - The helper's stdout is the message channel. Anything a child process prints there would corrupt it, which is why yt-dlp runs with stdin closed and output captured.
 - When inspecting instagram.com through Claude in Chrome, tool output containing URL query strings is blocked. Return path names, counts and booleans instead of raw URLs.
+- `--cookies-from-browser chrome` reads Google Chrome's login only. For another Chromium browser, set `cookies_from_browser` to `chromium:<path to its profile folder>`. Helium, for example, reads native host manifests from the Chromium folders, so `install.sh` covers it, but keeps its profile elsewhere.
+- Browsers pass library settings on to native hosts. Vivaldi's launch script sets `LD_PRELOAD` to its own cut-down `libffmpeg.so`. Preloaded into the system ffmpeg it crashes the merge (exit 139), and yt-dlp leaves separate `.fdash-...v.mp4` and `.m4a` files. Helium sets `LD_LIBRARY_PATH` to its install folder, putting its bundled `libvulkan.so.1` first. The helper strips both variables for child processes.
+- A global yt-dlp config (`~/.config/yt-dlp/config`) can add options such as `--cookies`. The helper passes `--ignore-config` so the first attempt stays logged out.
+- The helper logs every attempt (exit code, stdout, stderr) to `~/.local/state/insta-tools/helper.log`. Read it first when a download falls back.
 - Tampermonkey in Chrome needs "Allow User Scripts" or Developer mode. Only relevant if going back to the userscripts.
 
 ## Version history

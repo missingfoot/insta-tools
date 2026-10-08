@@ -25,6 +25,7 @@ import shutil
 import struct
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 DEFAULTS = {
@@ -40,6 +41,9 @@ DEFAULTS = {
 }
 
 CONFIG_PATH = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "insta-tools" / "config.json"
+# What each download attempt did, since Chrome shows the helper's stderr nowhere.
+LOG_PATH = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local" / "state") / "insta-tools" / "helper.log"
+LOG_LIMIT = 256 * 1024
 # Chrome can start the helper with a shorter PATH than a terminal has.
 EXTRA_PATH = ["~/.local/bin", "~/bin", "/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin"]
 CODE_RE = re.compile(r"^[A-Za-z0-9_-]{5,20}$")
@@ -85,15 +89,34 @@ def find_program(name, configured):
 def run(command, timeout):
     # stdin is closed and output is captured so the child can never touch the
     # pipes this program uses to talk to Chrome.
+    # Browsers pass their own library settings on to native hosts, and ffmpeg
+    # would load those libraries too. Vivaldi preloads its cut-down
+    # libffmpeg.so, which crashes ffmpeg during the merge and leaves separate
+    # video and audio files. Helium puts its bundled libvulkan first.
+    env = {key: value for key, value in os.environ.items() if key not in ("LD_PRELOAD", "LD_LIBRARY_PATH")}
     return subprocess.run(
         command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        text=True, errors="replace", timeout=timeout, check=False,
+        text=True, errors="replace", timeout=timeout, check=False, env=env,
     )
 
 
+def log(text):
+    try:
+        LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if LOG_PATH.exists() and LOG_PATH.stat().st_size > LOG_LIMIT:
+            LOG_PATH.replace(LOG_PATH.with_suffix(".log.old"))
+        stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        with LOG_PATH.open("a", encoding="utf-8") as handle:
+            handle.write(f"[{stamp} pid {os.getpid()}] {text.rstrip()}\n")
+    except OSError:
+        pass  # logging must never break a download
+
+
 def last_lines(text, limit=400):
-    text = " ".join(line.strip() for line in text.strip().splitlines()[-3:])
-    return text[-limit:]
+    # --verbose prints debug lines and a traceback after the error, so the
+    # ERROR lines are what the tooltip should show.
+    errors = [line.strip() for line in text.splitlines() if line.startswith("ERROR:")]
+    return " ".join(errors[-2:])[-limit:]
 
 
 def ping(config):
@@ -134,7 +157,12 @@ def download(config, code, name):
 
     base = [
         yt_dlp,
-        "--no-playlist", "--no-progress", "--no-warnings", "--force-overwrites",
+        # The user's own yt-dlp config can add --cookies or other options,
+        # which would make the first attempt a logged-in one.
+        "--ignore-config",
+        # Only goes to the log. It shows the exact ffmpeg command when a merge fails.
+        "--verbose",
+        "--no-playlist", "--no-progress", "--force-overwrites",
         # Best video plus best audio, merged. Falls back to the best single file.
         "--format", "bv*+ba/b",
         "--merge-output-format", "mp4",
@@ -156,15 +184,22 @@ def download(config, code, name):
         attempts.append(["--cookies-from-browser", browser])
 
     problem = "yt-dlp did not run"
+    log(f"download {code} as {name}, ffmpeg {ffmpeg}, parent pid {os.getppid()}, "
+        f"PATH={os.environ.get('PATH', '')}, LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH', '')}, "
+        f"LD_PRELOAD={os.environ.get('LD_PRELOAD', '')}")
     for extra in attempts:
+        started = time.monotonic()
         try:
             result = run(base + extra + ["--", url], int(config["timeout_seconds"]))
         except subprocess.TimeoutExpired:
             problem = f"yt-dlp took longer than {config['timeout_seconds']} seconds"
+            log(f"attempt {extra or 'plain'}: {problem}")
             continue
         except OSError as error:
             return {"ok": False, "error": f"Could not start yt-dlp: {error}"}
 
+        log(f"attempt {extra or 'plain'}: exit {result.returncode} after {time.monotonic() - started:.1f}s\n"
+            f"  stdout: {result.stdout.strip()}\n  stderr: {result.stderr.strip()[-12000:]}")
         printed = [line for line in result.stdout.splitlines() if line.strip()]
         if result.returncode == 0 and printed:
             path, _, size = printed[-1].partition("\t")
@@ -176,7 +211,7 @@ def download(config, code, name):
                     "used_login": bool(extra),
                     "merged": bool(ffmpeg),
                 }
-        problem = last_lines(result.stderr) or f"yt-dlp exited with code {result.returncode}"
+        problem = last_lines(result.stderr) or f"yt-dlp exited with code {result.returncode} (details in {LOG_PATH})"
 
     if not ffmpeg:
         problem += " (ffmpeg was not found, so separate video and audio cannot be merged)"
